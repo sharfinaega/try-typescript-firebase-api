@@ -25,13 +25,13 @@ app.post("/fights", async (req, res) => {
     const data = {
       winner,
       losser,
-      title
-      // id: ""
+      title,
+      id: ""
     };
     const fightRef = db.collection("fights").doc();
-    // const fightRefId = fightRef.id;
+    const fightRefId = fightRef.id;
 
-    // data.id = fightRefId;
+    data.id = fightRefId;
     await fightRef.set(data).then(result => {
       return data;
     });
@@ -76,10 +76,10 @@ app.get("/fights", async (req, res) => {
       .get()
       .then(snapshots => {
         snapshots.forEach(doc => {
-          fights.push({
-            id: doc.id,
-            data: doc.data()
-          });
+          fights.push(
+            // id: doc.id,
+            doc.data()
+          );
         });
         res.json(fights);
       });
@@ -89,35 +89,40 @@ app.get("/fights", async (req, res) => {
 });
 
 // update data by id
-// app.put("/fights/:id", async (req, res) => {
-//   try {
-//     const fightId = req.params.id;
-//     const title = req.body.title;
+app.put("/fights/:id", async (req, res) => {
+  try {
+    const fightId = req.params.id;
+    const title = req.body.title;
 
-//     if (!fightId) throw new Error("id is blank");
+    if (!fightId) throw new Error("id is blank");
+    if (!title) throw new Error("Title sudah ada");
 
-//     if (!title) throw new Error("Title sudah ada");
+    // const fightRefId = fightRef.id;
+    // data.id = fightRef;
+    const fight = db.collection("fights").doc(fightId);
+    let data: any = {};
 
-//     const data = {
-//       title,
-//       id: ''
-//     };
+    await fight
+      .update({ title: title })
+      .then(async fromFirebase => {
+        console.log(fromFirebase);
+        await fight.get().then(result => {
+          if (!result.exists) {
+            console.log("dokumen tidak ada");
+          } else {
+            data = result.data();
+          }
+        });
+      })
+      .catch(err => {
+        console.log(err);
+      });
 
-//     const fightRefId = fightRef.id;
-//     data.id = fightRefId;
-//     const fightRef = await db
-//       .collection("fights")
-//       .doc(fightId)
-//       .set(data, { merge: true });
-
-//     res.json({
-//       id: fightId,
-//       data
-//     });
-//   } catch (error) {
-//     res.status(500).send(error);
-//   }
-// });
+    res.json(data);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
 
 // delete data by id
 app.delete("/fights/:id", async (req, res) => {
@@ -138,3 +143,7 @@ app.delete("/fights/:id", async (req, res) => {
     res.status(500).send(error);
   }
 });
+
+// app.listen(3000, () => {
+//   console.log(`Server is running in http://localhost:${3000}`);
+// });
